@@ -2,8 +2,8 @@
 set -euo pipefail
 set -x
 
-declare -r PACKAGER="Jonathon Fernyhough <jonathon@manjaro.org>"
-declare -r GPGKEY="0x9C08A255442FAFF0"
+declare -r PACKAGER=""
+declare -r GPGKEY=""
 
 declare -r BUILDDIR="${PWD}"
 declare -r GPGDIR="${HOME}/.gnupg"
@@ -11,7 +11,7 @@ declare -r PKGDEST="/build/packages"
 declare -r SRCDEST="/build/sources"
 declare -r SRCPKGDEST="/build/srcpackages"
 declare -r LOGDEST="/build/makepkglogs"
-declare -r PKGCACHE="/misc/tomatousb/cache/pkg"
+declare -r PKGCACHE="/build/pkgcache"
 
 declare EXISTING="$(docker ps -a | grep manjaro-32-build | cut -d' ' -f1)"
 declare -r EXISTING

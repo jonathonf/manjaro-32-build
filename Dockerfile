@@ -1,7 +1,7 @@
 FROM jonathonf/manjaro-32:latest
 
-RUN pacman-mirrors -f3 -y && \
-    pacman -Syu --noconfirm --noprogressbar base-devel && \
+RUN pacman-mirrors -c all && \
+    pacman -Syyu --noconfirm --noprogressbar base-devel && \
     pacman -Scc --noconfirm --noprogressbar && \
     rm -fr /var/cache/pacman/pkg/* && \
     rm -f /var/lib/pacman/sync/*
