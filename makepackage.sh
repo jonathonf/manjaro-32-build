@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
+export CARCH=i686
 cd /build
 mkdir packages sources srcpackages makepkglogs || true
 cp -r /gpg /home/builder/.gnupg
@@ -20,9 +21,9 @@ for package in /build/packages/*.pkg.tar.xz; do
 	rm -f /pkgcache/"$package"
 done
 
-if [ ! -r /build/packages/packages.db.tar.xz ]; then
+if [ ! -r /build/packages/packages.db.tar.gz ]; then
 	echo "Initialising local package repository..."
-	sudo -u builder repo-add /build/packages/packages.db.tar.xz
+	sudo -u builder repo-add /build/packages/packages.db.tar.gz
 fi
 
 sed -i 's/# Branch = stable/Branch = x32-unstable/' /etc/pacman-mirrors.conf
@@ -31,7 +32,7 @@ sed -i '/^SyncFirst/c\SyncFirst    = manjaro-system archlinux-keyring manjaro-ke
 pacman-mirrors -a -U 'https://mirror.netzspielplatz.de/manjaro/packages'
 
 source PKGBUILD
-repo_version=$(pacman -Siy "${pkgname}" | grep "Version" | cut -d":" -f2 | tr -d '[:space:]')
+repo_version=$(pacman -Siy "${pkgname}" | grep "Version" | cut -d":" -f2 | tr -d '[:space:]' || echo "0")
 package_version="${pkgver}-${pkgrel}"
 newenough="$(vercmp $repo_version $package_version)"
 if [ $newenough -ge 0 ]; then
@@ -39,9 +40,22 @@ if [ $newenough -ge 0 ]; then
         exit 0
 fi
 
+# Make sure i686 in in the arch array
+case "${arch[@]}" in
+	*"any"*)
+		;;
+	*"i686"*)
+		;;
+	*)
+		sed -i "/^arch=/c arch=('i686')" PKGBUILD
+		;;
+esac
+
 echo "Importing any valid PGP keys..."
 if [ ! -z "${validpgpkeys:-}" ]; then
-        sudo -u builder gpg --recv-keys "$validpgpkeys"  
+	for key in "${validpgpkeys[@]}"; do
+	        sudo -u builder gpg --recv-key "$key"
+	done
 fi
 
 pacman --noconfirm --noprogressbar -Syyu
@@ -55,6 +69,4 @@ echo "Building package..."
 sudo -u builder script -q -c "/usr/bin/makepkg --noconfirm --noprogressbar --sign -Csfc" /dev/null
 
 #echo "Updating local package repository..."
-#sudo -u builder GLOBEXCLUDE='*git*' /usr/bin/repo-add -n -R -s \
-#  /build/packages/packages.db.tar.xz \
-#  /build/packages/*.pkg.tar.xz
+#sudo -u builder /usr/bin/repo-add -q -n /build/packages/packages.db.tar.gz /build/packages/*{i686,any}.pkg.tar.xz
